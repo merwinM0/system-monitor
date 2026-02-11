@@ -1,18 +1,17 @@
 use axum::{
-    middleware,
-    routing::{get, post},
     Router,
+    routing::{get, post},
 };
 use std::{net::SocketAddr, sync::Arc};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing::{info, Level};
+use tracing::{Level, info};
 use tracing_subscriber::FmtSubscriber;
 
 mod auth;
 mod collector;
 mod static_files;
 
-use auth::{login, AuthState, Claims};
+use auth::{AuthState, Claims, login};
 use collector::SystemStats;
 use static_files::serve_static;
 
