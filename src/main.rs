@@ -36,21 +36,20 @@ async fn main() {
     let username = std::env::var("MONITOR_USER").unwrap_or_else(|_| "admin".to_string());
     let password = std::env::var("MONITOR_PASS").unwrap_or_else(|_| "admin123".to_string());
 
-    // 获取网络信息
-    let local_ips = network::get_local_ips();
-    let lan_ips: Vec<String> = local_ips
-        .iter()
-        .filter(|ip| network::is_lan_ip(ip))
-        .cloned()
+    // 获取网络接口信息（包含类型）
+    let interfaces = network::get_network_interfaces();
+
+    // 调试：打印所有接口（开发时启用）
+    // network::print_network_debug();
+
+    // 过滤只显示局域网接口
+    let lan_interfaces: Vec<_> = interfaces
+        .into_iter()
+        .filter(|i| network::is_lan_ip(&i.ip))
         .collect();
 
-    // 打印服务器信息（优先显示局域网 IP）
-    let display_ips = if lan_ips.is_empty() {
-        local_ips
-    } else {
-        lan_ips
-    };
-    ui::print_server_info(port, &display_ips);
+    // 打印服务器信息
+    ui::print_server_info(port, &lan_interfaces);
 
     // 打印认证信息
     ui::print_auth_info(&username, &password);

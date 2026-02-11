@@ -38,8 +38,8 @@ pub fn print_banner() {
 }
 
 /// 打印服务器状态面板
-pub fn print_server_info(port: u16, ips: &[String]) {
-    let width = 60;
+pub fn print_server_info(port: u16, interfaces: &[super::network::NetworkInterface]) {
+    let width = 65;
 
     print_line_top(width);
     print_row(width, "服务状态", "运行中", true);
@@ -47,15 +47,11 @@ pub fn print_server_info(port: u16, ips: &[String]) {
     print_row(width, "监听端口", &format!("{}", port), false);
     print_separator(width);
 
-    // 打印所有可用 IP
-    if ips.len() == 1 {
-        print_row(
-            width,
-            "访问地址",
-            &format!("http://{}:{}", ips[0], port),
-            true,
-        );
+    // 打印所有可用接口
+    if interfaces.is_empty() {
+        print_row(width, "访问地址", &format!("http://0.0.0.0:{}", port), true);
     } else {
+        // 本机访问
         print_row(
             width,
             "本机访问",
@@ -63,15 +59,22 @@ pub fn print_server_info(port: u16, ips: &[String]) {
             false,
         );
         print_separator(width);
-        for (i, ip) in ips.iter().enumerate() {
-            let label = if i == 0 {
-                "局域网地址"
-            } else {
-                "            "
+
+        // 网络接口
+        for (i, iface) in interfaces.iter().enumerate() {
+            let type_icon = match iface.interface_type {
+                super::network::InterfaceType::WiFi => "📶",
+                super::network::InterfaceType::Ethernet => "🔌",
+                _ => "🌐",
             };
-            let highlight = i == 0;
-            print_row(width, label, &format!("http://{}:{}", ip, port), highlight);
-            if i < ips.len() - 1 {
+
+            let label = if i == 0 { "网络接口" } else { "         " };
+            let display = format!("{} {}: http://{}:{}", type_icon, iface.name, iface.ip, port);
+            let highlight = matches!(iface.interface_type, super::network::InterfaceType::WiFi);
+
+            print_row(width, label, &display, highlight);
+
+            if i < interfaces.len() - 1 {
                 print_separator(width);
             }
         }
