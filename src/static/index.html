@@ -3,16 +3,71 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>System Monitor</title>
+		<title>System Monitor Pro</title>
 		<style>
 			* { margin: 0; padding: 0; box-sizing: border-box; }
 			body {
 				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-				background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+				background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
 				color: #eee;
 				min-height: 100vh;
 				padding: 20px;
 			}
+			
+			/* 登录界面 */
+			#loginModal {
+				position: fixed;
+				top: 0; left: 0; width: 100%; height: 100%;
+				background: rgba(0,0,0,0.9);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 1000;
+			}
+			.login-box {
+				background: rgba(255,255,255,0.05);
+				backdrop-filter: blur(20px);
+				padding: 40px;
+				border-radius: 20px;
+				border: 1px solid rgba(255,255,255,0.1);
+				width: 90%;
+				max-width: 400px;
+			}
+			.login-box h2 {
+				text-align: center;
+				margin-bottom: 30px;
+				background: linear-gradient(45deg, #00d4ff, #7b2cbf);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+			}
+			.login-box input {
+				width: 100%;
+				padding: 15px;
+				margin: 10px 0;
+				background: rgba(255,255,255,0.05);
+				border: 1px solid rgba(255,255,255,0.1);
+				border-radius: 10px;
+				color: #fff;
+				font-size: 16px;
+			}
+			.login-box button {
+				width: 100%;
+				padding: 15px;
+				margin-top: 20px;
+				background: linear-gradient(45deg, #00d4ff, #7b2cbf);
+				border: none;
+				border-radius: 10px;
+				color: #fff;
+				font-size: 16px;
+				font-weight: bold;
+				cursor: pointer;
+				transition: transform 0.3s;
+			}
+			.login-box button:hover { transform: scale(1.05); }
+			.error-msg { color: #e74c3c; text-align: center; margin-top: 15px; }
+			
+			/* 主界面 */
+			#mainContent { display: none; }
 			.header {
 				text-align: center;
 				margin-bottom: 30px;
@@ -22,35 +77,56 @@
 				background: linear-gradient(45deg, #00d4ff, #7b2cbf);
 				-webkit-background-clip: text;
 				-webkit-text-fill-color: transparent;
-				margin-bottom: 10px;
 			}
-			.grid {
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-				gap: 20px;
-				max-width: 1400px;
-				margin: 0 auto;
-			}
-			.card {
-				background: rgba(255, 255, 255, 0.05);
+			
+			/* 资源监控面板（合并区块） */
+			.resource-panel {
+				background: rgba(255,255,255,0.05);
 				backdrop-filter: blur(10px);
-				border-radius: 16px;
-				padding: 24px;
-				border: 1px solid rgba(255, 255, 255, 0.1);
-				transition: transform 0.3s;
+				border-radius: 20px;
+				padding: 30px;
+				border: 1px solid rgba(255,255,255,0.1);
+				margin-bottom: 20px;
 			}
-			.card:hover {
-				transform: translateY(-5px);
-				background: rgba(255, 255, 255, 0.08);
+			.panel-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 25px;
+				padding-bottom: 15px;
+				border-bottom: 1px solid rgba(255,255,255,0.1);
 			}
-			.card-title {
-				font-size: 0.9rem;
+			.panel-title {
+				font-size: 1.3rem;
+				font-weight: bold;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+			
+			/* 资源网格 */
+			.resource-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+				gap: 20px;
+			}
+			.resource-item {
+				background: rgba(0,0,0,0.2);
+				border-radius: 15px;
+				padding: 20px;
+				border: 1px solid rgba(255,255,255,0.05);
+			}
+			.resource-label {
+				font-size: 0.85rem;
 				color: #888;
 				text-transform: uppercase;
 				letter-spacing: 1px;
-				margin-bottom: 12px;
+				margin-bottom: 10px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
 			}
-			.metric {
+			.resource-value {
 				font-size: 2rem;
 				font-weight: bold;
 				margin-bottom: 8px;
@@ -58,10 +134,9 @@
 			.progress-bar {
 				width: 100%;
 				height: 8px;
-				background: rgba(255, 255, 255, 0.1);
+				background: rgba(255,255,255,0.1);
 				border-radius: 4px;
 				overflow: hidden;
-				margin-top: 10px;
 			}
 			.progress-fill {
 				height: 100%;
@@ -70,166 +145,333 @@
 			}
 			.cpu-fill { background: linear-gradient(90deg, #00d4ff, #0099cc); }
 			.mem-fill { background: linear-gradient(90deg, #7b2cbf, #9d4edd); }
-			.disk-fill { background: linear-gradient(90deg, #f39c12, #e74c3c); }
+			.gpu-fill { background: linear-gradient(90deg, #f39c12, #e74c3c); }
 			
-			.disk-list, .network-list {
+			/* GPU 详情子网格 */
+			.gpu-details {
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
+				gap: 10px;
 				margin-top: 15px;
+				font-size: 0.85rem;
 			}
-			.disk-item, .net-item {
+			.gpu-detail-item {
+				background: rgba(255,255,255,0.03);
+				padding: 8px 12px;
+				border-radius: 8px;
 				display: flex;
 				justify-content: space-between;
-				padding: 10px 0;
-				border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+			}
+			
+			/* 电池指示器 */
+			.battery-indicator {
+				display: flex;
+				align-items: center;
+				gap: 15px;
+				background: rgba(0,0,0,0.2);
+				padding: 15px 25px;
+				border-radius: 50px;
+				border: 1px solid rgba(255,255,255,0.1);
+			}
+			.battery-icon {
+				font-size: 1.5rem;
+			}
+			.battery-text {
+				font-size: 1.1rem;
+				font-weight: bold;
+			}
+			.charging { color: #2ecc71; animation: pulse 2s infinite; }
+			.not-charging { color: #f39c12; }
+			
+			/* 其他卡片 */
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+				gap: 20px;
+			}
+			.card {
+				background: rgba(255,255,255,0.05);
+				backdrop-filter: blur(10px);
+				border-radius: 16px;
+				padding: 24px;
+				border: 1px solid rgba(255,255,255,0.1);
+			}
+			.card-title {
 				font-size: 0.9rem;
+				color: #888;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				margin-bottom: 15px;
 			}
-			.disk-item:last-child, .net-item:last-child {
-				border-bottom: none;
-			}
-			.status {
-				display: inline-block;
-				width: 8px;
-				height: 8px;
-				border-radius: 50%;
-				background: #2ecc71;
-				margin-right: 8px;
-				animation: pulse 2s infinite;
-			}
+			
 			@keyframes pulse {
 				0%, 100% { opacity: 1; }
 				50% { opacity: 0.5; }
 			}
-			.error {
-				text-align: center;
-				color: #e74c3c;
-				padding: 40px;
+			
+			.logout-btn {
+				background: rgba(255,255,255,0.1);
+				border: 1px solid rgba(255,255,255,0.2);
+				color: #fff;
+				padding: 8px 20px;
+				border-radius: 20px;
+				cursor: pointer;
+				transition: all 0.3s;
 			}
-			.refresh-time {
-				text-align: center;
+			.logout-btn:hover {
+				background: rgba(231, 76, 60, 0.3);
+				border-color: #e74c3c;
+			}
+			
+			.no-gpu {
 				color: #666;
-				margin-top: 20px;
-				font-size: 0.85rem;
+				font-style: italic;
+				text-align: center;
+				padding: 20px;
 			}
 		</style>
 	</head>
 	<body>
-		<div class="header">
-			<h1>🔍 System Monitor</h1>
-			<p>实时系统监控面板</p>
-		</div>
-
-		<div id="content" class="grid">
-			<div class="card">
-				<div class="card-title">加载中...</div>
+		<!-- 登录模态框 -->
+		<div id="loginModal">
+			<div class="login-box">
+				<h2>🔐 System Monitor</h2>
+				<input type="text" id="username" placeholder="用户名" value="admin">
+				<input type="password" id="password" placeholder="密码" value="admin123">
+				<button onclick="login()">登录</button>
+				<div class="error-msg" id="errorMsg"></div>
 			</div>
 		</div>
 
-		<div class="refresh-time" id="refreshTime"></div>
+		<!-- 主内容 -->
+		<div id="mainContent">
+			<div class="header">
+				<h1>🔍 System Monitor Pro</h1>
+				<p>实时系统监控面板</p>
+			</div>
+
+			<!-- 资源监控面板（CPU + 内存 + GPU 合并） -->
+			<div class="resource-panel">
+				<div class="panel-header">
+					<div class="panel-title">
+						⚡ 核心资源监控
+						<span id="batteryIndicator"></span>
+					</div>
+					<button class="logout-btn" onclick="logout()">退出登录</button>
+				</div>
+
+				<div class="resource-grid">
+					<!-- CPU -->
+					<div class="resource-item">
+						<div class="resource-label">🖥️ CPU 使用率</div>
+						<div class="resource-value" id="cpuValue">--%</div>
+						<div class="progress-bar">
+							<div class="progress-fill cpu-fill" id="cpuBar" style="width: 0%"></div>
+						</div>
+						<div style="margin-top: 10px; font-size: 0.85rem; color: #888;" id="cpuInfo">--</div>
+					</div>
+
+					<!-- 内存 -->
+					<div class="resource-item">
+						<div class="resource-label">💾 内存使用</div>
+						<div class="resource-value" id="memValue">--%</div>
+						<div class="progress-bar">
+							<div class="progress-fill mem-fill" id="memBar" style="width: 0%"></div>
+						</div>
+						<div style="margin-top: 10px; font-size: 0.85rem; color: #888;" id="memInfo">--</div>
+					</div>
+
+					<!-- GPU -->
+					<div class="resource-item" style="grid-column: span 1;">
+						<div class="resource-label">🎮 GPU 状态</div>
+						<div id="gpuContent">
+							<div class="no-gpu">未检测到 NVIDIA GPU</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 其他信息 -->
+			<div class="grid">
+				<div class="card">
+					<div class="card-title">💽 磁盘状态</div>
+					<div id="diskList"></div>
+				</div>
+
+				<div class="card">
+					<div class="card-title">🌐 网络流量</div>
+					<div id="networkList"></div>
+				</div>
+
+				<div class="card">
+					<div class="card-title">ℹ️ 系统信息</div>
+					<div id="systemInfo" style="font-size: 0.9rem; line-height: 1.8; color: #aaa;"></div>
+				</div>
+			</div>
+		</div>
 
 		<script>
+			let token = localStorage.getItem('monitor_token');
 			let refreshInterval;
 			
-			async function fetchStats() {
+			// 如果有 token，直接显示主界面
+			if (token) {
+				showMain();
+			}
+			
+			async function login() {
+				const username = document.getElementById('username').value;
+				const password = document.getElementById('password').value;
+				
 				try {
-					const response = await fetch('/api/stats');
-					if (response.status === 401) {
-						// 认证失败，浏览器会自动弹出认证框
-						location.reload();
-						return;
-					}
-					if (!response.ok) throw new Error('Network response was not ok');
-					
-					const data = await response.json();
-					updateUI(data);
-					} catch (error) {
-						document.getElementById('content').innerHTML =
-						`<div class="error">连接失败: ${error.message}</div>`;
-					}
-				}
-				
-				function updateUI(data) {
-					const html = `
-					<div class="card">
-					<div class="card-title"><span class="status"></span>CPU 使用率</div>
-					<div class="metric">${data.cpu_usage.toFixed(1)}%</div>
-					<div class="progress-bar">
-					<div class="progress-fill cpu-fill" style="width: ${data.cpu_usage}%"></div>
-					</div>
-					<div style="margin-top: 10px; font-size: 0.9rem; color: #888;">
-					${data.cpu_name} (${data.cpu_count} 核)
-					</div>
-					</div>
-					
-					<div class="card">
-					<div class="card-title">内存使用</div>
-					<div class="metric">${data.memory_usage_percent.toFixed(1)}%</div>
-					<div class="progress-bar">
-					<div class="progress-fill mem-fill" style="width: ${data.memory_usage_percent}%"></div>
-					</div>
-					<div style="margin-top: 10px; font-size: 0.9rem; color: #888;">
-					已用: ${data.memory_used.toFixed(2)} GB / 总计: ${data.memory_total.toFixed(2)} GB
-					</div>
-					</div>
-					
-					<div class="card">
-					<div class="card-title">磁盘状态</div>
-					<div class="disk-list">
-					${data.disks.map(d => `
-					<div class="disk-item">
-					<span>${d.name} (${d.mount_point})</span>
-					<span>${d.usage_percent.toFixed(1)}%</span>
-					</div>
-					<div class="progress-bar" style="margin-bottom: 10px;">
-					<div class="progress-fill disk-fill" style="width: ${d.usage_percent}%"></div>
-					</div>
-					<div style="font-size: 0.8rem; color: #666; margin-bottom: 15px;">
-					${d.used_gb.toFixed(1)} GB / ${d.total_gb.toFixed(1)} GB
-					</div>
-					`).join('')}
-					</div>
-					</div>
-					
-					<div class="card">
-					<div class="card-title">网络流量</div>
-					<div class="network-list">
-					${data.networks.map(n => `
-					<div class="net-item">
-					<span>${n.name}</span>
-					<span style="color: #888;">
-					↓${n.received_mb} MB ↑${n.transmitted_mb} MB
-					</span>
-					</div>
-					`).join('')}
-					</div>
-					</div>
-					
-					<div class="card">
-					<div class="card-title">系统信息</div>
-					<div style="font-size: 0.9rem; line-height: 1.8; color: #aaa;">
-					<div>主机名: ${data.hostname}</div>
-					<div>操作系统: ${data.os_version}</div>
-					<div>运行时间: ${data.uptime_hours} 小时</div>
-					</div>
-					</div>
-					`;
-					
-					document.getElementById('content').innerHTML = html;
-					document.getElementById('refreshTime').textContent =
-					'最后更新: ' + new Date().toLocaleTimeString();
-				}
-				
-				// 初始加载和定时刷新
-				fetchStats();
-				refreshInterval = setInterval(fetchStats, 2000); // 每2秒刷新
-				
-				// 页面不可见时暂停刷新
-				document.addEventListener('visibilitychange', () => {
-					if (document.hidden) {
-						clearInterval(refreshInterval);
-						} else {
+					const res = await fetch('/api/login', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ username, password })
+						});
+						
+						const data = await res.json();
+						
+						if (res.ok) {
+							token = data.token;
+							localStorage.setItem('monitor_token', token);
+							showMain();
+							} else {
+								document.getElementById('errorMsg').textContent = data.error || '登录失败';
+							}
+							} catch (e) {
+								document.getElementById('errorMsg').textContent = '网络错误';
+							}
+						}
+						
+						function showMain() {
+							document.getElementById('loginModal').style.display = 'none';
+							document.getElementById('mainContent').style.display = 'block';
 							fetchStats();
 							refreshInterval = setInterval(fetchStats, 2000);
 						}
-						});
+						
+						function logout() {
+							localStorage.removeItem('monitor_token');
+							location.reload();
+						}
+						
+						async function fetchStats() {
+							try {
+								const res = await fetch('/api/stats', {
+									headers: { 'Authorization': `Bearer ${token}` }
+									});
+									
+									if (res.status === 401) {
+										logout();
+										return;
+									}
+									
+									const data = await res.json();
+									updateUI(data);
+									} catch (e) {
+										console.error('Fetch error:', e);
+									}
+								}
+								
+								function updateUI(data) {
+									// 更新 CPU
+									const cpu = data.resources;
+									document.getElementById('cpuValue').textContent = cpu.cpu_usage.toFixed(1) + '%';
+									document.getElementById('cpuBar').style.width = cpu.cpu_usage + '%';
+									document.getElementById('cpuInfo').textContent =
+									`${cpu.cpu_name} (${cpu.cpu_count} 核)`;
+									
+									// 更新内存
+									document.getElementById('memValue').textContent = cpu.memory_usage_percent.toFixed(1) + '%';
+									document.getElementById('memBar').style.width = cpu.memory_usage_percent + '%';
+									document.getElementById('memInfo').textContent =
+									`已用: ${cpu.memory_used.toFixed(2)} GB / 总计: ${cpu.memory_total.toFixed(2)} GB`;
+									
+									// 更新 GPU
+									if (cpu.gpu) {
+										const g = cpu.gpu;
+										document.getElementById('gpuContent').innerHTML = `
+										<div style="margin-bottom: 10px;">
+										<div style="font-weight: bold; margin-bottom: 5px;">${g.name}</div>
+										<div class="progress-bar" style="margin-bottom: 5px;">
+										<div class="progress-fill gpu-fill" style="width: ${g.usage_percent}%"></div>
+										</div>
+										<div style="font-size: 0.9rem; color: #888;">
+										利用率: ${g.usage_percent}% | 温度: ${g.temperature}°C | 功耗: ${g.power_draw_watts}W
+										</div>
+										</div>
+										<div class="gpu-details">
+										<div class="gpu-detail-item">
+										<span>显存已用</span>
+										<span>${(g.memory_used_mb / 1024).toFixed(2)} GB</span>
+										</div>
+										<div class="gpu-detail-item">
+										<span>显存总计</span>
+										<span>${(g.memory_total_mb / 1024).toFixed(2)} GB</span>
+										</div>
+										</div>
+										`;
+									}
+									
+									// 更新电池
+									if (data.battery) {
+										const b = data.battery;
+										const icon = b.is_charging ? '⚡' : '🔋';
+										const cls = b.is_charging ? 'charging' : 'not-charging';
+										const time = b.time_remaining_minutes
+										? `(${Math.floor(b.time_remaining_minutes / 60)}h ${b.time_remaining_minutes % 60}m)`
+										: '';
+										
+										document.getElementById('batteryIndicator').innerHTML = `
+										<div class="battery-indicator ${cls}">
+										<span class="battery-icon">${icon}</span>
+										<span class="battery-text">${b.percentage.toFixed(0)}% ${time}</span>
+										</div>
+										`;
+									}
+									
+									// 更新磁盘
+									document.getElementById('diskList').innerHTML = data.disks.map(d => `
+									<div style="margin-bottom: 15px;">
+									<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+									<span>${d.name}</span>
+									<span>${d.usage_percent.toFixed(1)}%</span>
+									</div>
+									<div class="progress-bar">
+									<div class="progress-fill" style="width: ${d.usage_percent}%; background: #3498db;"></div>
+									</div>
+									<div style="font-size: 0.8rem; color: #666; margin-top: 3px;">
+									${d.used_gb.toFixed(1)} / ${d.total_gb.toFixed(1)} GB
+									</div>
+									</div>
+									`).join('');
+									
+									// 更新网络
+									document.getElementById('networkList').innerHTML = data.networks.map(n => `
+									<div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+									<span>${n.name}</span>
+									<span style="color: #888;">↓${n.received_mb}MB ↑${n.transmitted_mb}MB</span>
+									</div>
+									`).join('');
+									
+									// 更新系统信息
+									document.getElementById('systemInfo').innerHTML = `
+									<div>主机名: ${data.hostname}</div>
+									<div>操作系统: ${data.os_version}</div>
+									<div>运行时间: ${data.uptime_hours} 小时</div>
+									${data.battery ? `<div>电池健康: ${data.battery.health_percent.toFixed(1)}%</div>` : ''}
+									`;
+								}
+								
+								// 页面可见性变化时暂停/恢复刷新
+								document.addEventListener('visibilitychange', () => {
+									if (document.hidden) {
+										clearInterval(refreshInterval);
+										} else {
+											refreshInterval = setInterval(fetchStats, 2000);
+										}
+										});
 		</script>
 	</body>
 </html>

@@ -8,7 +8,7 @@ edition = "2024"
 axum = { version = "0.7", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }
 tower = "0.4"
-tower-http = { version = "0.5", features = ["auth", "fs", "trace"] }
+tower-http = { version = "0.5", features = ["trace", "fs", "cors"] }
 
 # 序列化
 serde = { version = "1.0", features = ["derive"] }
@@ -17,13 +17,28 @@ serde_json = "1.0"
 # 系统信息采集
 sysinfo = "0.30"
 
-# 基础64编码（用于 Basic Auth）
-base64 = "0.22"
+# GPU 监控 (NVIDIA 优先，支持多平台)
+nvml-wrapper = "0.10"
+# 备用：如果是 AMD/Intel，可以用下面的，但这里先用 NVIDIA 方案
+# amdgpu-sysfs = "0.2" 
+
+# 电池监控 (跨平台)
+battery = "0.7"
+
+# JWT 认证
+jsonwebtoken = "9"
+bcrypt = "0.15"  # 密码哈希，比明文存储安全
+
+# 静态文件嵌入
+rust-embed = "8"
+mime_guess = "2.0"
 
 # 日志
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
-# 内嵌静态文件
-rust-embed = "8"
-mime_guess = "2.0"
+# 时间处理（JWT 过期）
+chrono = { version = "0.4", features = ["serde"] }
+
+# 异步 trait
+async-trait = "0.1"
