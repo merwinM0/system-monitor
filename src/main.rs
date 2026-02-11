@@ -33,8 +33,8 @@ async fn main() {
 
     // 配置
     let port = 8080;
-    let username = std::env::var("MONITOR_USER").unwrap_or_else(|_| "admin".to_string());
-    let password = std::env::var("MONITOR_PASS").unwrap_or_else(|_| "admin123".to_string());
+    let username = std::env::var("MONITOR_USER").unwrap_or_else(|_| "user".to_string());
+    let password = std::env::var("MONITOR_PASS").unwrap_or_else(|_| "user123".to_string());
 
     // 获取网络接口信息（包含类型）
     let interfaces = network::get_network_interfaces();
