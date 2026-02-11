@@ -42,3 +42,5 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # 异步 trait
 async-trait = "0.1"
+
+local-ip-address = "0.6"  # 获取本地 IP

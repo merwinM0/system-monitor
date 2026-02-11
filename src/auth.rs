@@ -1,12 +1,11 @@
 use axum::{
-    async_trait,
+    Json, async_trait,
     extract::{FromRequestParts, State},
-    http::{request::Parts, StatusCode},
-    Json,
+    http::{StatusCode, request::Parts},
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -19,12 +18,19 @@ pub struct AuthState {
     pub users: Vec<(String, String)>, // (username, hashed_password)
 }
 
+// 在 AuthState 中添加构造函数
 impl AuthState {
     pub fn new() -> Self {
-        // 默认账号：admin / admin123
         let hashed = hash("admin123", DEFAULT_COST).unwrap();
         Self {
             users: vec![("admin".to_string(), hashed)],
+        }
+    }
+
+    pub fn new_with_credentials(username: String, password: String) -> Self {
+        let hashed = hash(&password, DEFAULT_COST).unwrap();
+        Self {
+            users: vec![(username, hashed)],
         }
     }
 }
@@ -32,9 +38,9 @@ impl AuthState {
 // JWT Claims 结构
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,    // 用户名
-    pub exp: i64,       // 过期时间戳
-    pub iat: i64,       // 签发时间戳
+    pub sub: String, // 用户名
+    pub exp: i64,    // 过期时间戳
+    pub iat: i64,    // 签发时间戳
 }
 
 // 登录请求
@@ -64,22 +70,22 @@ pub async fn login(
     Json(req): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, (StatusCode, Json<ErrorResponse>)> {
     // 查找用户并验证密码
-    let user = state
-        .users
-        .iter()
-        .find(|(u, _)| u == &req.username);
+    let user = state.users.iter().find(|(u, _)| u == &req.username);
 
     match user {
         Some((username, hashed)) => {
             if verify(&req.password, hashed).map_err(|_| {
-                (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
-                    error: "密码验证失败".to_string(),
-                }))
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        error: "密码验证失败".to_string(),
+                    }),
+                )
             })? {
                 // 生成 JWT
                 let now = Utc::now();
                 let exp = now + Duration::hours(TOKEN_EXPIRE_HOURS);
-                
+
                 let claims = Claims {
                     sub: username.clone(),
                     exp: exp.timestamp(),
@@ -90,10 +96,14 @@ pub async fn login(
                     &Header::default(),
                     &claims,
                     &EncodingKey::from_secret(JWT_SECRET),
-                ).map_err(|_| {
-                    (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse {
-                        error: "Token生成失败".to_string(),
-                    }))
+                )
+                .map_err(|_| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ErrorResponse {
+                            error: "Token生成失败".to_string(),
+                        }),
+                    )
                 })?;
 
                 Ok(Json(LoginResponse {
@@ -102,14 +112,20 @@ pub async fn login(
                     expires_in: TOKEN_EXPIRE_HOURS * 3600,
                 }))
             } else {
-                Err((StatusCode::UNAUTHORIZED, Json(ErrorResponse {
-                    error: "密码错误".to_string(),
-                })))
+                Err((
+                    StatusCode::UNAUTHORIZED,
+                    Json(ErrorResponse {
+                        error: "密码错误".to_string(),
+                    }),
+                ))
             }
         }
-        None => Err((StatusCode::UNAUTHORIZED, Json(ErrorResponse {
-            error: "用户不存在".to_string(),
-        }))),
+        None => Err((
+            StatusCode::UNAUTHORIZED,
+            Json(ErrorResponse {
+                error: "用户不存在".to_string(),
+            }),
+        )),
     }
 }
 
@@ -132,20 +148,22 @@ where
         match auth_header {
             Some(token) => {
                 let validation = Validation::default();
-                match decode::<Claims>(
-                    token,
-                    &DecodingKey::from_secret(JWT_SECRET),
-                    &validation,
-                ) {
+                match decode::<Claims>(token, &DecodingKey::from_secret(JWT_SECRET), &validation) {
                     Ok(token_data) => Ok(token_data.claims),
-                    Err(_) => Err((StatusCode::UNAUTHORIZED, Json(ErrorResponse {
-                        error: "Token无效或已过期".to_string(),
-                    }))),
+                    Err(_) => Err((
+                        StatusCode::UNAUTHORIZED,
+                        Json(ErrorResponse {
+                            error: "Token无效或已过期".to_string(),
+                        }),
+                    )),
                 }
             }
-            None => Err((StatusCode::UNAUTHORIZED, Json(ErrorResponse {
-                error: "缺少Authorization Header".to_string(),
-            }))),
+            None => Err((
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                    error: "缺少Authorization Header".to_string(),
+                }),
+            )),
         }
     }
 }
