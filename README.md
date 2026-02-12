@@ -2,6 +2,14 @@
 
 一个现代化的跨平台系统监控工具，使用Rust构建后端，提供实时系统资源监控和可视化界面。
 
+<div align="center">
+  <img src="imgs/interface_pc.png" alt="PC界面" width="600">
+  <br>
+  <img src="imgs/interface_phone.jpg" alt="手机界面" height="400">
+  <br>
+  <img src="imgs/interface_tui.png" alt="终端界面" width="600">
+</div>
+
 ## 功能特性
 
 ### 🚀 核心功能
