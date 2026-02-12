@@ -7,7 +7,8 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
-  /* 确保网格有一致的高度基准 */
+  /* 确保网格容器有高度，如果父容器没有高度，50%可能不生效 */
+  /* 这里假设 #mainContent 或 body 有足够空间，或者根据内容撑开 */
   align-items: stretch;
 }
 
@@ -20,11 +21,15 @@
   box-shadow: var(--shadow);
   transition: border-color 0.2s;
 
-  /* 【关键修复】使用 Flex 布局让内容撑满 */
+  /* 【关键修改1】高度限制与 Flex 布局 */
+  height: 80%;
+  /* 占据父容器 50% 高度 */
+  max-height: 80vh;
+  /* 添加视口高度限制，防止屏幕过大时卡片太长 */
   display: flex;
   flex-direction: column;
-  min-height: 450px;
-  /* 统一最小高度 */
+  overflow: hidden;
+  /* 防止内容溢出卡片边界 */
 }
 
 .card:hover {
@@ -40,7 +45,8 @@
   margin-bottom: 20px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-secondary);
-  /* 防止标题被压缩 */
+
+  /* 【关键修改2】标题固定，不参与滚动 */
   flex-shrink: 0;
 }
 
@@ -51,11 +57,29 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  /* 【关键修复】自动填充剩余空间，超出滚动 */
+
+  /* 【关键修改3】内容区域滚动 */
   flex: 1;
   overflow-y: auto;
-  padding-right: 4px;
-  /* 留出滚动条空间 */
+  padding-right: 8px;
+  /* 增加右侧内边距，滚动条更美观 */
+  scrollbar-width: thin;
+  /* Firefox 美化 */
+  scrollbar-color: var(--border-secondary) transparent;
+}
+
+/* WebKit 浏览器滚动条美化 */
+.process-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.process-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.process-list::-webkit-scrollbar-thumb {
+  background-color: var(--border-secondary);
+  border-radius: 2px;
 }
 
 .process-item {
@@ -63,6 +87,8 @@
   border: 1px solid var(--border-secondary);
   border-radius: var(--radius);
   transition: border-color 0.2s;
+  /* 确保进程项不会被压缩 */
+  flex-shrink: 0;
 }
 
 .process-item:hover {
@@ -125,8 +151,9 @@
   font-size: 13px;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  /* 撑满父容器 */
+  flex: 1;
+  min-height: 0;
+  /* 关键：允许 flex 子项收缩并启用滚动 */
 }
 
 .cpu-info-row {
@@ -134,6 +161,7 @@
   justify-content: space-between;
   padding: 10px 0;
   border-bottom: 1px solid var(--bg-secondary);
+  flex-shrink: 0;
 }
 
 .cpu-info-label {
@@ -148,9 +176,10 @@
 
 .cpu-core-usage {
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  overflow-y: auto;
-  /* 核心多的时候也能滚动 */
+  min-height: 0;
 }
 
 .cpu-core-title {
@@ -160,12 +189,18 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .cpu-core-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 8px;
+
+  /* 核心数过多时滚动 */
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
 }
 
 .cpu-core-item {
@@ -209,8 +244,11 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  /* 内容滚动 */
   flex: 1;
   overflow-y: auto;
+  padding-right: 8px;
 }
 
 .disk-item {
@@ -218,6 +256,7 @@
   grid-template-columns: 1fr auto;
   gap: 12px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .disk-header {
@@ -269,7 +308,10 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  /* 整体滚动，或者可以拆分 */
+  padding-right: 4px;
 }
 
 .section-title {
@@ -282,6 +324,7 @@
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border-secondary);
   margin-top: 16px;
+  flex-shrink: 0;
 }
 
 .section-title:first-child {
@@ -292,6 +335,7 @@
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .speed-item {
