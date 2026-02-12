@@ -515,3 +515,222 @@ body {
 .pulse {
   animation: pulse 2s infinite;
 }
+
+
+
+/* ============================================
+   新增样式 - 进程管理、CPU进阶、网络传感器
+   ============================================ */
+
+/* 进程列表 */
+.process-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.process-item {
+  padding: 12px;
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius);
+  transition: border-color 0.2s;
+}
+
+.process-item:hover {
+  border-color: var(--border-primary);
+}
+
+.process-name {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.process-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.process-cpu {
+  color: var(--accent-blue);
+}
+
+.process-mem {
+  color: var(--text-secondary);
+}
+
+.process-status {
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.process-status.运行中 {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.process-status.睡眠 {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.process-status.停止 {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.process-status.僵尸 {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* CPU 进阶信息 */
+.cpu-advanced {
+  font-size: 13px;
+}
+
+.cpu-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bg-secondary);
+}
+
+.cpu-info-label {
+  color: var(--text-muted);
+}
+
+.cpu-info-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.cpu-core-usage {
+  margin-top: 16px;
+}
+
+.cpu-core-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.cpu-core-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.cpu-core-item {
+  padding: 8px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 3px;
+}
+
+.core-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.core-bar {
+  height: 3px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.core-fill {
+  height: 100%;
+  background: var(--text-primary);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.core-value {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* GPU 进程占用 */
+.gpu-processes {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-secondary);
+}
+
+.gpu-process-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.gpu-process-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border-bottom: 1px dashed var(--border-secondary);
+}
+
+.gpu-process-item:last-child {
+  border-bottom: none;
+}
+
+/* 网络进阶 + 硬件传感器 */
+.network-sensors {
+  font-size: 13px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.network-speed {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.speed-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+}
+
+.speed-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.speed-value {
+  font-size: 16px;

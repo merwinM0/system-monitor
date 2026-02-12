@@ -22,7 +22,7 @@
 		<!-- 主界面 -->
 		<div id="mainContent">
 			<header class="header">
-				<h1>System Monitor</h1>
+				<h1 id="systemTitle">Loading...</h1>
 				<div class="header-actions">
 					<span id="batteryIndicator"></span>
 					<button class="btn btn-danger" onclick="logout()">退出</button>
@@ -60,7 +60,7 @@
 					<div class="resource-item">
 						<div class="resource-label">GPU Status</div>
 						<div id="gpuContent">
-							<div class="no-gpu">未检测到 NVIDIA GPU</div>
+							<div class="no-gpu">未检测到 GPU</div>
 						</div>
 					</div>
 				</div>
@@ -68,19 +68,28 @@
 
 			<!-- 其他信息 -->
 			<div class="info-grid">
+				<!-- 进程管理 -->
+				<div class="card">
+					<div class="card-title">进程管理</div>
+					<div class="process-list" id="processList"></div>
+				</div>
+
+				<!-- CPU 进阶信息 -->
+				<div class="card">
+					<div class="card-title">CPU 进阶信息</div>
+					<div class="cpu-advanced" id="cpuAdvanced"></div>
+				</div>
+
+				<!-- 磁盘信息 -->
 				<div class="card">
 					<div class="card-title">Storage</div>
 					<div class="disk-list" id="diskList"></div>
 				</div>
 
+				<!-- 网络进阶 + 硬件传感器 -->
 				<div class="card">
-					<div class="card-title">Network</div>
-					<div class="network-list" id="networkList"></div>
-				</div>
-
-				<div class="card">
-					<div class="card-title">System Info</div>
-					<div class="system-info" id="systemInfo"></div>
+					<div class="card-title">网络 & 传感器</div>
+					<div class="network-sensors" id="networkSensors"></div>
 				</div>
 			</div>
 		</div>
