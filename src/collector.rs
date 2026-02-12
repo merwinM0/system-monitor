@@ -253,6 +253,7 @@ fn collect_gpu_info() -> Option<GpuInfo> {
     None
 }
 
+
 fn collect_nvidia_gpu() -> Option<GpuInfo> {
     match Nvml::init() {
         Ok(nvml) => {
@@ -278,7 +279,7 @@ fn collect_nvidia_gpu() -> Option<GpuInfo> {
                         .clock_info(nvml_wrapper::enum_wrappers::device::Clock::Memory)
                         .ok();
 
-                    // 占用显存的进程（使用正确的 API）
+                    // 占用显存的进程（修复 API 兼容性）
                     let top_processes = device
                         .running_graphics_processes()
                         .ok()
@@ -286,13 +287,16 @@ fn collect_nvidia_gpu() -> Option<GpuInfo> {
                             processes
                                 .iter()
                                 .filter_map(|p| {
+                                    // 将 UsedGpuMemory 枚举转换为字节数
+                                    let memory_bytes = match p.used_gpu_memory {
+                                        nvml_wrapper::enum_wrappers::device::UsedGpuMemory::Used(bytes) => bytes,
+                                        nvml_wrapper::enum_wrappers::device::UsedGpuMemory::Unavailable => 0,
+                                    };
+                                    
                                     Some(GpuProcessInfo {
                                         pid: p.pid,
-                                        name: p
-                                            .process_name
-                                            .clone()
-                                            .unwrap_or_else(|| "unknown".to_string()),
-                                        memory_mb: p.used_gpu_memory / 1024 / 1024,
+                                        name: format!("PID: {}", p.pid),  // 该版本没有进程名，用 PID 代替
+                                        memory_mb: memory_bytes / 1024 / 1024,
                                     })
                                 })
                                 .take(5)
