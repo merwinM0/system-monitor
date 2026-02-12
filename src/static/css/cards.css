@@ -1,0 +1,372 @@
+/* ============================================
+   cards.css - 信息卡片网格及内部组件
+   ============================================ */
+
+/* 信息卡片网格 */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  /* 确保网格有一致的高度基准 */
+  align-items: stretch;
+}
+
+/* 卡片通用样式 */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s;
+
+  /* 【关键修复】使用 Flex 布局让内容撑满 */
+  display: flex;
+  flex-direction: column;
+  min-height: 450px;
+  /* 统一最小高度 */
+}
+
+.card:hover {
+  border-color: var(--border-primary);
+}
+
+.card-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-secondary);
+  /* 防止标题被压缩 */
+  flex-shrink: 0;
+}
+
+/* ============================================
+   进程管理
+   ============================================ */
+.process-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* 【关键修复】自动填充剩余空间，超出滚动 */
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  /* 留出滚动条空间 */
+}
+
+.process-item {
+  padding: 12px;
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius);
+  transition: border-color 0.2s;
+}
+
+.process-item:hover {
+  border-color: var(--border-primary);
+}
+
+.process-name {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.process-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.process-cpu {
+  color: var(--accent-blue);
+}
+
+.process-mem {
+  color: var(--text-secondary);
+}
+
+.process-status {
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.process-status.运行中 {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.process-status.睡眠 {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.process-status.停止 {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.process-status.僵尸 {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* ============================================
+   CPU 进阶信息
+   ============================================ */
+.cpu-advanced {
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* 撑满父容器 */
+}
+
+.cpu-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bg-secondary);
+}
+
+.cpu-info-label {
+  color: var(--text-muted);
+}
+
+.cpu-info-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.cpu-core-usage {
+  margin-top: 16px;
+  flex: 1;
+  overflow-y: auto;
+  /* 核心多的时候也能滚动 */
+}
+
+.cpu-core-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.cpu-core-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.cpu-core-item {
+  padding: 8px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 3px;
+}
+
+.core-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.core-bar {
+  height: 3px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.core-fill {
+  height: 100%;
+  background: var(--text-primary);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.core-value {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* ============================================
+   磁盘信息
+   ============================================ */
+.disk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.disk-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.disk-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.disk-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.disk-percent {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.disk-bar {
+  height: 3px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+  grid-column: 1 / -1;
+}
+
+.disk-fill {
+  height: 100%;
+  background: var(--text-primary);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.disk-info {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+/* ============================================
+   网络与传感器
+   ============================================ */
+.network-sensors {
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-secondary);
+  margin-top: 16px;
+}
+
+.section-title:first-child {
+  margin-top: 0;
+}
+
+.network-speed {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.speed-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+}
+
+.speed-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.speed-value {
+  font-size: 16px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.network-interfaces {
+  margin-bottom: 16px;
+}
+
+.network-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-secondary);
+  font-size: 12px;
+}
+
+.network-item:last-child {
+  border-bottom: none;
+}
+
+.network-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.network-traffic {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.sensor-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 12px;
+}
+
+.sensor-label {
+  color: var(--text-muted);
+}
+
+.sensor-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.no-data {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 16px;
+}
