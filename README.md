@@ -4,8 +4,7 @@
 
 <div align="center">
   <img src="imgs/interface_pc.png" alt="PC界面" width="600">
-  <br>
-  <img src="imgs/interface_phone.jpg" alt="手机界面" height="400">
+  <img src="imgs/interface_phone.jpg" alt="手机界面" height="400" style="margin-left: 20px;">
   <br>
   <img src="imgs/interface_tui.png" alt="终端界面" width="600">
 </div>
