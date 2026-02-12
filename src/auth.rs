@@ -21,9 +21,9 @@ pub struct AuthState {
 // 在 AuthState 中添加构造函数
 impl AuthState {
     pub fn new() -> Self {
-        let hashed = hash("admin123", DEFAULT_COST).unwrap();
+        let hashed = hash("user123", DEFAULT_COST).unwrap();
         Self {
-            users: vec![("admin".to_string(), hashed)],
+            users: vec![("user".to_string(), hashed)],
         }
     }
 
