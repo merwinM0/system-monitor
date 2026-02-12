@@ -3,7 +3,7 @@ use nvml_wrapper::Nvml;
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
-use sysinfo::{Disks, Networks, Pid, ProcessStatus, System};
+use sysinfo::{Disks, Networks, ProcessStatus, System};
 
 #[derive(Serialize, Clone)]
 pub struct SystemStats {
@@ -278,18 +278,21 @@ fn collect_nvidia_gpu() -> Option<GpuInfo> {
                         .clock_info(nvml_wrapper::enum_wrappers::device::Clock::Memory)
                         .ok();
 
-                    // 占用显存的进程
+                    // 占用显存的进程（使用正确的 API）
                     let top_processes = device
                         .running_graphics_processes()
                         .ok()
-                        .map(|pids| {
-                            pids.iter()
-                                .filter_map(|pid| {
-                                    let process_info = device.process_info(*pid).ok()?;
+                        .map(|processes| {
+                            processes
+                                .iter()
+                                .filter_map(|p| {
                                     Some(GpuProcessInfo {
-                                        pid: pid.as_raw(),
-                                        name: process_info.name,
-                                        memory_mb: process_info.used_gpu_memory / 1024 / 1024,
+                                        pid: p.pid,
+                                        name: p
+                                            .process_name
+                                            .clone()
+                                            .unwrap_or_else(|| "unknown".to_string()),
+                                        memory_mb: p.used_gpu_memory / 1024 / 1024,
                                     })
                                 })
                                 .take(5)
@@ -416,7 +419,7 @@ fn collect_intel_gpu() -> Option<GpuInfo> {
         usage_percent: 0,
         memory_total_mb: 0,
         memory_used_mb: 0,
-        temperature: None,
+        temperature: 0, // 改为 0，不是 None
         fan_speed_percent: None,
         core_clock_mhz,
         memory_clock_mhz: None,
@@ -428,20 +431,22 @@ fn collect_process_info(sys: &System) -> Vec<ProcessInfo> {
     let mut processes: Vec<ProcessInfo> = sys
         .processes()
         .iter()
-        .map(|(pid, process)| ProcessInfo {
-            pid: pid.as_u32(),
-            name: process.name().to_string_lossy().to_string(),
-            cpu_usage: process.cpu_usage(),
-            memory_mb: process.memory() as f64 / 1024.0 / 1024.0,
-            status: match process.status() {
-                ProcessStatus::Run => "运行中".to_string(),
-                ProcessStatus::Sleep => "睡眠".to_string(),
-                ProcessStatus::Stop => "停止".to_string(),
-                ProcessStatus::Zombie => "僵尸".to_string(),
-                ProcessStatus::Dead => "死亡".to_string(),
-                ProcessStatus::Idle => "空闲".to_string(),
-                _ => "未知".to_string(),
-            },
+        .map(|(pid, process)| {
+            ProcessInfo {
+                pid: pid.as_u32(),
+                name: process.name().to_string(), // 改为 to_string()
+                cpu_usage: process.cpu_usage(),
+                memory_mb: process.memory() as f64 / 1024.0 / 1024.0,
+                status: match process.status() {
+                    ProcessStatus::Run => "运行中".to_string(),
+                    ProcessStatus::Sleep => "睡眠".to_string(),
+                    ProcessStatus::Stop => "停止".to_string(),
+                    ProcessStatus::Zombie => "僵尸".to_string(),
+                    ProcessStatus::Dead => "死亡".to_string(),
+                    ProcessStatus::Idle => "空闲".to_string(),
+                    _ => "未知".to_string(),
+                },
+            }
         })
         .collect();
 
