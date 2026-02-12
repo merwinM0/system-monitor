@@ -1,14 +1,14 @@
 use crossterm::{
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
+    Frame, Terminal,
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
-    Frame, Terminal,
 };
 use std::io::{self, Stdout};
 
@@ -127,7 +127,7 @@ pub fn draw_ui(
     f.render_widget(auth, chunks[2]);
 
     // 提示
-    let tips = Paragraph::new("按 Ctrl+C 停止服务")
+    let tips = Paragraph::new("按 Ctrl+C或q 停止服务")
         .style(Style::default().fg(Color::DarkGray))
         .alignment(Alignment::Center);
     f.render_widget(tips, chunks[3]);

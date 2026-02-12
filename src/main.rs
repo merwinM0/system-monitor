@@ -7,6 +7,7 @@ use tokio::signal;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::{Level, info};
 use tracing_subscriber::FmtSubscriber;
+use crossterm::event::{Event, KeyCode, KeyModifiers};
 
 mod auth;
 mod collector;
@@ -20,10 +21,10 @@ use static_files::serve_static;
 
 #[tokio::main]
 async fn main() {
-    // 初始化日志（降低级别，避免干扰 TUI）
+    // 初始化日志（输出到 stderr，避免干扰 TUI）
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::WARN)
-        .with_writer(std::io::stderr) // 日志输出到 stderr，不影响 TUI
+        .with_writer(std::io::stderr)
         .finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
@@ -48,29 +49,20 @@ async fn main() {
 
     // 获取网络接口信息
     let interfaces = network::get_network_interfaces();
-
-    // 过滤只显示局域网接口
     let lan_interfaces: Vec<_> = interfaces
         .into_iter()
         .filter(|i| network::is_lan_ip(&i.ip))
         .collect();
 
-    // 绘制初始界面
+    // 准备 UI 数据
     let username_for_ui = username.clone();
     let password_for_ui = password.clone();
     let interfaces_for_ui = lan_interfaces.clone();
 
-    terminal
-        .draw(|f| {
-            tui::draw_ui(
-                f,
-                port,
-                &username_for_ui,
-                &password_for_ui,
-                &interfaces_for_ui,
-            );
-        })
-        .unwrap();
+    // 绘制初始界面
+    terminal.draw(|f| {
+        tui::draw_ui(f, port, &username_for_ui, &password_for_ui, &interfaces_for_ui);
+    }).unwrap();
 
     // 构建服务
     let auth_state = Arc::new(AuthState::new_with_credentials(username, password));
@@ -84,22 +76,7 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .with_state(auth_state);
 
-    // 绑定到所有接口
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-
-    // 更新界面：显示启动成功
-    terminal
-        .draw(|f| {
-            tui::draw_ui(
-                f,
-                port,
-                &username_for_ui,
-                &password_for_ui,
-                &interfaces_for_ui,
-            );
-        })
-        .unwrap();
-
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 
     // 优雅关闭
@@ -107,7 +84,6 @@ async fn main() {
     let graceful = server.with_graceful_shutdown(shutdown_signal());
 
     if let Err(e) = graceful.await {
-        // 错误时恢复终端再输出
         let _ = tui::restore_terminal();
         eprintln!("服务错误: {}", e);
         return;
@@ -115,8 +91,6 @@ async fn main() {
 
     // 绘制关闭界面
     terminal.draw(|f| tui::draw_shutdown(f)).unwrap();
-
-    // 短暂延迟让用户看到关闭提示
     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 }
 
@@ -125,7 +99,7 @@ async fn get_stats(_claims: Claims) -> axum::Json<SystemStats> {
     axum::Json(stats)
 }
 
-/// 处理关闭信号
+/// 处理关闭信号（支持 Raw Mode 下的 Ctrl+C 和 q 键）
 async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()
@@ -144,8 +118,29 @@ async fn shutdown_signal() {
     #[cfg(not(unix))]
     let terminate = std::future::pending::<()>();
 
+    // 新增：监听键盘事件（解决 Raw Mode 下 Ctrl+C 失效问题）
+    let keyboard = async {
+        loop {
+            // 等待键盘事件
+            match crossterm::event::read() {
+                Ok(Event::Key(key)) => {
+                    // 检测 Ctrl+C 或 q 键
+                    if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                        break;
+                    }
+                    if key.code == KeyCode::Char('q') {
+                        break;
+                    }
+                }
+                Ok(_) => continue,
+                Err(_) => break,
+            }
+        }
+    };
+
     tokio::select! {
         _ = ctrl_c => {},
         _ = terminate => {},
+        _ = keyboard => {}, // 添加键盘监听分支
     }
 }

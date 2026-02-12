@@ -47,5 +47,6 @@ local-ip-address = "0.6"  # 获取本地 IP
 
 # TUI 界面
 ratatui = "0.29"
-crossterm = "0.28"
+crossterm = { version = "0.28", features = ["event-stream"] }
+futures = "0.3" # 需要用于 select
 scopeguard = "1.2"  # 用于确保终端恢复
