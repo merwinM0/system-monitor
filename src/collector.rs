@@ -4,6 +4,7 @@ use serde::Serialize;
 use std::fs;
 use std::path::Path;
 use sysinfo::{Disks, Networks, ProcessStatus, System};
+use nvml_wrapper::enums::device::UsedGpuMemory;
 
 #[derive(Serialize, Clone)]
 pub struct SystemStats {
