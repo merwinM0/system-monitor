@@ -52,7 +52,7 @@ pub struct ResourceBlock {
 pub struct CpuAdvanced {
     // 每个核心的占用率
     pub per_core_usage: Vec<f32>,
-    // CPU 频率（MHz）
+    // CPU 频率
     pub cpu_frequency_mhz: u64,
     // 负载均衡（1/5/15分钟）
     pub load_avg_1: f64,
@@ -140,7 +140,13 @@ static mut LAST_NETWORK_DATA: Option<(u64, u64, std::time::Instant)> = None;
 
 pub async fn collect_stats() -> SystemStats {
     let mut sys = System::new_all();
+
+    // 首次刷新所有信息
     sys.refresh_all();
+
+    // 关键修改：sysinfo 获取 CPU 使用率需要时间间隔
+    // 先刷新 CPU，等待 500ms，再次刷新才能拿到准确的 usage
+    sys.refresh_cpu();
     std::thread::sleep(std::time::Duration::from_millis(500));
     sys.refresh_cpu();
 
@@ -177,7 +183,7 @@ pub async fn collect_stats() -> SystemStats {
     // GPU 采集（自动检测）
     let gpu = collect_gpu_info();
 
-    // 进程采集
+    // 进程采集 - 传入 sys 对象
     let processes = collect_process_info(&sys);
 
     // 磁盘
@@ -454,9 +460,9 @@ fn collect_process_info(sys: &System) -> Vec<ProcessInfo> {
         })
         .collect();
 
-    // 按CPU占用排序，取前10
+    // 按CPU占用排序，取前20（之前是10）
     processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap());
-    processes.truncate(10);
+    processes.truncate(20);
 
     processes
 }
