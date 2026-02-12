@@ -12,35 +12,42 @@ mod auth;
 mod collector;
 mod network;
 mod static_files;
-mod ui;
+mod tui;
 
 use auth::{AuthState, Claims, login};
-use axum::http::Uri;
 use collector::SystemStats;
 use static_files::serve_static;
 
 #[tokio::main]
 async fn main() {
-    // 初始化日志（仅记录到文件，不输出到终端避免干扰 UI）
+    // 初始化日志（降低级别，避免干扰 TUI）
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::WARN) // 降低日志级别，减少终端干扰
+        .with_max_level(Level::WARN)
+        .with_writer(std::io::stderr) // 日志输出到 stderr，不影响 TUI
         .finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
-    // 清屏并打印 banner
-    print!("\x1b[2J\x1b[1;1H"); // ANSI 清屏 + 光标置顶
-    ui::print_banner();
+    // 初始化终端
+    let mut terminal = match tui::init_terminal() {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Failed to initialize terminal: {}", e);
+            return;
+        }
+    };
+
+    // 确保退出时恢复终端
+    let _guard = scopeguard::guard((), |_| {
+        let _ = tui::restore_terminal();
+    });
 
     // 配置
     let port = 8080;
     let username = std::env::var("MONITOR_USER").unwrap_or_else(|_| "user".to_string());
     let password = std::env::var("MONITOR_PASS").unwrap_or_else(|_| "user123".to_string());
 
-    // 获取网络接口信息（包含类型）
+    // 获取网络接口信息
     let interfaces = network::get_network_interfaces();
-
-    // 调试：打印所有接口（开发时启用）
-    // network::print_network_debug();
 
     // 过滤只显示局域网接口
     let lan_interfaces: Vec<_> = interfaces
@@ -48,14 +55,22 @@ async fn main() {
         .filter(|i| network::is_lan_ip(&i.ip))
         .collect();
 
-    // 打印服务器信息
-    ui::print_server_info(port, &lan_interfaces);
+    // 绘制初始界面
+    let username_for_ui = username.clone();
+    let password_for_ui = password.clone();
+    let interfaces_for_ui = lan_interfaces.clone();
 
-    // 打印认证信息
-    ui::print_auth_info(&username, &password);
-
-    // 打印访问提示
-    ui::print_access_tips();
+    terminal
+        .draw(|f| {
+            tui::draw_ui(
+                f,
+                port,
+                &username_for_ui,
+                &password_for_ui,
+                &interfaces_for_ui,
+            );
+        })
+        .unwrap();
 
     // 构建服务
     let auth_state = Arc::new(AuthState::new_with_credentials(username, password));
@@ -69,16 +84,21 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .with_state(auth_state);
 
-    // 绑定到所有接口（关键：允许局域网访问）
+    // 绑定到所有接口
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
-    // 打印启动信息
-    println!(
-        "{}[✓]{} 服务启动成功，按 Ctrl+C 停止服务",
-        ui::GREEN,
-        ui::RESET
-    );
-    println!();
+    // 更新界面：显示启动成功
+    terminal
+        .draw(|f| {
+            tui::draw_ui(
+                f,
+                port,
+                &username_for_ui,
+                &password_for_ui,
+                &interfaces_for_ui,
+            );
+        })
+        .unwrap();
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 
@@ -87,10 +107,17 @@ async fn main() {
     let graceful = server.with_graceful_shutdown(shutdown_signal());
 
     if let Err(e) = graceful.await {
+        // 错误时恢复终端再输出
+        let _ = tui::restore_terminal();
         eprintln!("服务错误: {}", e);
+        return;
     }
 
-    ui::print_shutdown();
+    // 绘制关闭界面
+    terminal.draw(|f| tui::draw_shutdown(f)).unwrap();
+
+    // 短暂延迟让用户看到关闭提示
+    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 }
 
 async fn get_stats(_claims: Claims) -> axum::Json<SystemStats> {

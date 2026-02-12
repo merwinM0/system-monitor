@@ -44,3 +44,8 @@ chrono = { version = "0.4", features = ["serde"] }
 async-trait = "0.1"
 
 local-ip-address = "0.6"  # 获取本地 IP
+
+# TUI 界面
+ratatui = "0.29"
+crossterm = "0.28"
+scopeguard = "1.2"  # 用于确保终端恢复
