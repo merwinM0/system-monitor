@@ -312,12 +312,17 @@ body {
 /* ============================================
    信息卡片网格
    ============================================ */
+/* .info-grid { */
+  /* display: grid; */
+  /* grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); */
+  /* gap: 24px; */
+/* } */
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  /* 强制分为4列，每列平分宽度 */
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
-
 .card {
   background: var(--bg-primary);
   border: 1px solid var(--border-secondary);
