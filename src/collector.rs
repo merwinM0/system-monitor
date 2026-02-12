@@ -1,10 +1,10 @@
 use battery::{Manager as BatteryManager, State};
 use nvml_wrapper::Nvml;
+use nvml_wrapper::enums::device::UsedGpuMemory;
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
 use sysinfo::{Disks, Networks, ProcessStatus, System};
-use nvml_wrapper::enums::device::UsedGpuMemory;
 
 #[derive(Serialize, Clone)]
 pub struct SystemStats {
@@ -254,7 +254,6 @@ fn collect_gpu_info() -> Option<GpuInfo> {
     None
 }
 
-
 fn collect_nvidia_gpu() -> Option<GpuInfo> {
     match Nvml::init() {
         Ok(nvml) => {
@@ -290,13 +289,13 @@ fn collect_nvidia_gpu() -> Option<GpuInfo> {
                                 .filter_map(|p| {
                                     // 将 UsedGpuMemory 枚举转换为字节数
                                     let memory_bytes = match p.used_gpu_memory {
-                                        nvml_wrapper::enum_wrappers::device::UsedGpuMemory::Used(bytes) => bytes,
-                                        nvml_wrapper::enum_wrappers::device::UsedGpuMemory::Unavailable => 0,
+                                        UsedGpuMemory::Used(bytes) => bytes,
+                                        UsedGpuMemory::Unavailable => 0,
                                     };
-                                    
+
                                     Some(GpuProcessInfo {
                                         pid: p.pid,
-                                        name: format!("PID: {}", p.pid),  // 该版本没有进程名，用 PID 代替
+                                        name: format!("PID: {}", p.pid), // 该版本没有进程名，用 PID 代替
                                         memory_mb: memory_bytes / 1024 / 1024,
                                     })
                                 })
